@@ -137,3 +137,37 @@ export const updateProject = async (projectId: string, updates: Partial<VideoPro
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
 };
+
+export const seedSampleProject = async () => {
+  const project = await createProject({
+    title: 'Cyberpunk Tokyo Drive',
+    description: 'A cinematic exploration of neon-lit night streets in Tokyo.',
+    originalPrompt: 'Edit my footage to look like a high-octane cyberpunk anime opening.',
+    status: ProjectStatus.COMPLETED,
+    aspectRatio: '16:9',
+  });
+
+  if (project) {
+    await createAsset(project.id, {
+      name: 'tokyo_night_drive.mp4',
+      type: 'video',
+      url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Fallback sample
+      role: 'source'
+    });
+    
+    await createAsset(project.id, {
+      name: 'synthwave_bass.wav',
+      type: 'audio',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      role: 'background'
+    });
+
+    await createAsset(project.id, {
+      name: 'neon_glitch_overlay.png',
+      type: 'image',
+      url: 'https://images.unsplash.com/photo-1542332213-9b5a5a3fab35',
+      role: 'overlay'
+    });
+  }
+  return project;
+};

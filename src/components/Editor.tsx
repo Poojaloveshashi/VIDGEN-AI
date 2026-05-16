@@ -45,7 +45,21 @@ export function Editor() {
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const [prompt, setPrompt] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const suggestions = [
+    { text: 'Add professional captions', icon: Type },
+    { text: 'Apply cinematic color grading', icon: Sparkles },
+    { text: 'Trim silences automatically', icon: Scissors },
+    { text: 'Sync cuts to music beat', icon: Zap },
+    { text: 'Enhance voice clarity', icon: Mic2 },
+    { text: 'Add motion blur to motion', icon: Layout }
+  ];
+
+  const filteredSuggestions = prompt 
+    ? suggestions.filter(s => s.text.toLowerCase().includes(prompt.toLowerCase()))
+    : suggestions;
   const [instructions, setInstructions] = useState<AIEditInstruction[]>([]);
   const [currentStatus, setCurrentStatus] = useState<string>('Ready');
   const [projectId, setProjectId] = useState<string | null>(id || null);
@@ -53,7 +67,7 @@ export function Editor() {
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [activeTab, setActiveTab] = useState<'ai' | 'audio' | 'visuals' | 'templates' | 'text' | 'elements'>('ai');
+  const [activeTab, setActiveTab] = useState<'ai' | 'audio' | 'visuals' | 'analysis'>('ai');
   const [leftNavTab, setLeftNavTab] = useState<'templates' | 'elements' | 'text' | 'upload' | 'tools'>('templates');
   const [volumes, setVolumes] = useState({
     master: 80,
@@ -169,14 +183,14 @@ export function Editor() {
              </h1>
              <div className="flex items-center gap-2 px-3 py-1 hover:bg-white/5 cursor-pointer rounded-md border border-transparent hover:border-white/10 transition-all">
                 <FileVideo size={12} className="text-white/40" />
-                <span className="text-[10px] font-bold text-white/60 uppercase">File</span>
+                <span className="text-[10px] font-bold text-white/60">File</span>
              </div>
              <div className="flex items-center gap-2 px-3 py-1 hover:bg-white/5 cursor-pointer rounded-md border border-transparent hover:border-white/10 transition-all">
                 <Layout size={12} className="text-white/40" />
-                <span className="text-[10px] font-bold text-white/60 uppercase">Resize</span>
+                <span className="text-[10px] font-bold text-white/60">Resize</span>
              </div>
              <div className="flex items-center gap-2 px-3 py-1 bg-brand-cyan/10 rounded-md border border-brand-cyan/20">
-                <span className="text-[10px] font-bold text-brand-cyan uppercase">Editing</span>
+                <span className="text-[10px] font-bold text-brand-cyan">Editing</span>
              </div>
           </div>
         </div>
@@ -185,11 +199,59 @@ export function Editor() {
           <input 
             type="text"
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="Ask AI to edit, trim, or style your video..."
             className="w-full bg-white/5 border border-white/10 rounded-lg px-10 py-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-brand-cyan/50 transition-all"
           />
           <Wand2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand-cyan transition-colors" />
+          
+          <AnimatePresence>
+            {showSuggestions && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-2xl border border-white/10 rounded-xl overflow-hidden z-[100] shadow-2xl"
+              >
+                <div className="p-2 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                   <span className="text-[8px] font-black uppercase text-white/40 tracking-widest px-2">Suggestions</span>
+                   <Sparkles size={10} className="text-brand-cyan animate-pulse mr-2" />
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  {filteredSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setPrompt(suggestion.text);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-brand-cyan/10 text-left transition-colors group/item border-b border-white/5 last:border-0"
+                    >
+                      <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/40 group-hover/item:text-brand-cyan group-hover/item:bg-brand-cyan/20 transition-all">
+                        <suggestion.icon size={12} />
+                      </div>
+                      <span className="text-[10px] font-bold text-white/60 group-hover/item:text-white transition-colors">{suggestion.text}</span>
+                      <Plus size={12} className="ml-auto opacity-0 group-hover/item:opacity-40" />
+                    </button>
+                  ))}
+                  {filteredSuggestions.length === 0 && (
+                    <div className="p-8 text-center opacity-20">
+                      <p className="text-[10px] font-bold uppercase">No exact matches</p>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-brand-cyan/5 border-t border-white/10">
+                   <p className="text-[8px] font-medium text-brand-cyan/60 uppercase text-center italic">Try descriptive commands like "Make it look like a 90s camcorder"</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <button 
             onClick={handleAutomate}
             disabled={!prompt || isProcessing}
@@ -231,7 +293,7 @@ export function Editor() {
               }`}
             >
               <item.icon size={20} />
-              <span className="text-[8px] font-bold uppercase tracking-widest">{item.label}</span>
+              <span className="text-[8px] font-bold tracking-widest">{item.label}</span>
             </button>
           ))}
           <div className="mt-auto p-4 flex flex-col items-center gap-6 text-white/20">
@@ -243,7 +305,7 @@ export function Editor() {
           {/* Sub-Sidebar: Contextual Panel */}
           <div className="col-span-2 flex flex-col bg-brand-bg rounded-xl overflow-hidden border border-white/5">
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{leftNavTab}</span>
+              <span className="text-[10px] font-black tracking-widest text-white/60">{leftNavTab.charAt(0).toUpperCase() + leftNavTab.slice(1)}</span>
               {leftNavTab === 'upload' && (
                 <button onClick={() => fileInputRef.current?.click()} className="p-2 hover:bg-brand-cyan/20 rounded-lg text-brand-cyan border border-brand-cyan/20">
                   <Plus size={14} />
@@ -273,9 +335,9 @@ export function Editor() {
                     </motion.div>
                   ))}
                   {assets.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center py-12 px-6 opacity-20 text-center border-2 border-dashed border-white/5 rounded-2xl">
-                      <Upload size={24} className="mb-4" />
-                      <p className="text-[8px] uppercase font-black tracking-widest leading-loose">Drop files here</p>
+                    <div className="h-full flex flex-col items-center justify-center py-12 px-6 text-center border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+                      <Upload size={24} className="mb-4 text-white/20" />
+                      <p className="text-[8px] uppercase font-black tracking-widest leading-loose text-white/30">Your media library is empty</p>
                     </div>
                   )}
                 </div>
@@ -503,7 +565,8 @@ export function Editor() {
               {[
                 { id: 'ai', label: 'History' },
                 { id: 'audio', label: 'Sound' },
-                { id: 'visuals', label: 'Style' }
+                { id: 'visuals', label: 'Style' },
+                { id: 'analysis', label: 'Analysis' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -518,6 +581,73 @@ export function Editor() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+              {activeTab === 'analysis' && (
+                <div className="space-y-6">
+                   <div className="p-5 bg-brand-cyan/5 border border-brand-cyan/20 rounded-2xl">
+                      <div className="flex items-center gap-3 mb-6">
+                         <div className="w-8 h-8 rounded-lg bg-brand-cyan/20 flex items-center justify-center">
+                            <Cpu size={16} className="text-brand-cyan" />
+                         </div>
+                         <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-cyan">Media Metadata</h4>
+                      </div>
+                      <div className="space-y-3">
+                         <div className="flex justify-between items-center py-2 border-b border-white/5">
+                            <span className="text-[9px] font-bold text-white/40 uppercase">Resolution</span>
+                            <span className="text-[9px] font-mono text-white/80">4K (3840x2160)</span>
+                         </div>
+                         <div className="flex justify-between items-center py-2 border-b border-white/5">
+                            <span className="text-[9px] font-bold text-white/40 uppercase">Frame Rate</span>
+                            <span className="text-[9px] font-mono text-white/80">60 FPS</span>
+                         </div>
+                         <div className="flex justify-between items-center py-2 border-b border-white/5">
+                            <span className="text-[9px] font-bold text-white/40 uppercase">Bitrate</span>
+                            <span className="text-[9px] font-mono text-white/80">45 Mbps</span>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="p-5 border border-white/10 rounded-2xl">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-6">AI Scene Detection</h4>
+                      <div className="space-y-4">
+                         {[
+                           { label: 'Action sequences', value: 34, color: 'bg-brand-cyan' },
+                           { label: 'Dialog scenes', value: 42, color: 'bg-brand-fuchsia' },
+                           { label: 'B-Roll/Transitions', value: 24, color: 'bg-white/40' }
+                         ].map(item => (
+                           <div key={item.label} className="space-y-2">
+                              <div className="flex justify-between items-center text-[8px] font-bold uppercase tracking-widest">
+                                 <span className="text-white/40">{item.label}</span>
+                                 <span className="text-white/60">{item.value}%</span>
+                              </div>
+                              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                 <motion.div 
+                                   initial={{ width: 0 }}
+                                   animate={{ width: `${item.value}%` }}
+                                   className={`h-full ${item.color}`}
+                                 />
+                              </div>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="p-5 border border-white/10 rounded-2xl bg-black/20">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/20 mb-4">Sentiment Map</p>
+                      <div className="h-24 flex items-end gap-1 px-2">
+                         {Array.from({length: 20}).map((_, i) => {
+                           const h = Math.random() * 80 + 20;
+                           return (
+                             <div 
+                               key={i} 
+                               className="flex-1 bg-brand-cyan/20 rounded-t-sm hover:bg-brand-cyan/40 transition-colors"
+                               style={{ height: `${h}%` }}
+                             />
+                           );
+                         })}
+                      </div>
+                   </div>
+                </div>
+              )}
               {activeTab === 'ai' && (
                 <div className="space-y-6">
                   <div className="p-5 bg-white/5 border border-white/10 rounded-2xl">
@@ -651,10 +781,13 @@ export function Editor() {
             <div className="p-6 border-t border-white/10 bg-black/40">
                <div className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-white/5 rounded-2xl hover:bg-white/5 hover:border-brand-cyan/20 transition-all cursor-pointer group"
                     onClick={() => fileInputRef.current?.click()}>
-                  <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-white/30 group-hover:text-brand-cyan group-hover:scale-110 transition-all">
+                  <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-white/40 group-hover:text-brand-cyan group-hover:scale-110 transition-all border border-white/10">
                      <Plus size={20} />
                   </div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-white/20">Add files</p>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black tracking-widest text-white/70 mb-1">Add Media</p>
+                    <p className="text-[8px] font-bold text-white/30 tracking-wider">Drag and drop or click to upload</p>
+                  </div>
                </div>
             </div>
           </div>

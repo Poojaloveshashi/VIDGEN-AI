@@ -43,7 +43,7 @@ export interface ProjectAsset {
   type: 'video' | 'audio' | 'image';
   url: string;
   name: string;
-  role: 'source' | 'effect' | 'voiceover';
+  role: 'source' | 'effect' | 'voiceover' | 'background' | 'overlay';
   createdAt: number;
 }
 

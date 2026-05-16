@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'motion/react';
-import { Database, Mic2, Wand2, Upload, MessageSquare, Terminal, Zap, Sparkles } from 'lucide-react';
+import { Database, Mic2, Wand2, Upload, MessageSquare, Terminal, Zap, Sparkles, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function Landing() {
@@ -124,7 +124,7 @@ export function Landing() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 w-full max-w-6xl border border-white/10 bg-white/5 p-1 rounded-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 w-full max-w-6xl border border-white/10 bg-white/5 p-1 rounded-2xl">
         {[
           {
             icon: Database,
@@ -140,6 +140,11 @@ export function Landing() {
             icon: Wand2,
             title: "AI Tools",
             desc: "Simple text commands to perform complex video edits automatically."
+          },
+          {
+            icon: Cpu,
+            title: "Analysis",
+            desc: "AI-driven scene detection, sentiment mapping, and metadata deep dives."
           }
         ].map((feature, idx) => (
           <motion.div
