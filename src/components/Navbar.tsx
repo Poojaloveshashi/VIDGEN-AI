@@ -17,8 +17,8 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-8">
-          <Link to="/dashboard" className="nav-link text-brand-cyan">The Vault</Link>
-          <Link to="/new" className="nav-link">Prompt Lab</Link>
+          <Link to="/dashboard" className="nav-link text-brand-cyan">My Projects</Link>
+          <Link to="/new" className="nav-link">New Project</Link>
         </div>
       </div>
     </nav>

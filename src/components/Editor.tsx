@@ -168,9 +168,11 @@ export function Editor() {
                {projectId ? `Project: ${assets[0]?.name?.split('.')[0] || 'My Video'}` : 'New Project'}
              </h1>
              <div className="flex items-center gap-2 px-3 py-1 hover:bg-white/5 cursor-pointer rounded-md border border-transparent hover:border-white/10 transition-all">
+                <FileVideo size={12} className="text-white/40" />
                 <span className="text-[10px] font-bold text-white/60 uppercase">File</span>
              </div>
              <div className="flex items-center gap-2 px-3 py-1 hover:bg-white/5 cursor-pointer rounded-md border border-transparent hover:border-white/10 transition-all">
+                <Layout size={12} className="text-white/40" />
                 <span className="text-[10px] font-bold text-white/60 uppercase">Resize</span>
              </div>
              <div className="flex items-center gap-2 px-3 py-1 bg-brand-cyan/10 rounded-md border border-brand-cyan/20">
@@ -198,8 +200,14 @@ export function Editor() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="text-[10px] font-bold text-white/60 hover:text-white uppercase transition-colors">Preview</button>
-          <button className="bg-white text-black px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-cyan transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">Share</button>
+          <button className="flex items-center gap-2 text-[10px] font-bold text-white/60 hover:text-white uppercase transition-colors">
+            <Play size={12} />
+            Preview
+          </button>
+          <button className="flex items-center gap-2 bg-white text-black px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-cyan transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+            <CheckCircle2 size={12} />
+            Share
+          </button>
         </div>
       </div>
 
@@ -307,8 +315,12 @@ export function Editor() {
                   <div className="p-4 bg-brand-cyan/5 border border-brand-cyan/10 rounded-xl">
                     <p className="text-[9px] font-black uppercase text-brand-cyan mb-2">Graphics</p>
                     <div className="grid grid-cols-2 gap-2">
-                       <div className="h-12 bg-white/5 rounded-lg border border-white/5" />
-                       <div className="h-12 bg-white/5 rounded-lg border border-white/5" />
+                       <div className="h-12 bg-white/5 rounded-lg border border-white/5 flex items-center justify-center">
+                          <Sticker size={16} className="text-white/20" />
+                       </div>
+                       <div className="h-12 bg-white/5 rounded-lg border border-white/5 flex items-center justify-center">
+                          <Sparkles size={16} className="text-white/20" />
+                       </div>
                     </div>
                   </div>
                 </div>
@@ -422,10 +434,16 @@ export function Editor() {
                     <button className="p-1 text-white/30 hover:text-white"><Trash2 size={14} /></button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                   <div className="flex bg-white/5 rounded-lg border border-white/10 p-0.5">
-                      <button className="px-2 py-1 bg-brand-cyan/20 text-brand-cyan rounded text-[8px] font-black uppercase">Standard</button>
-                      <button className="px-2 py-1 text-white/30 rounded text-[8px] font-black uppercase">Vertical</button>
+                  <div className="flex items-center gap-3">
+                   <div className="flex bg-black/40 rounded-lg border border-white/10 p-0.5">
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-cyan/20 text-brand-cyan rounded text-[8px] font-black uppercase border border-brand-cyan/20">
+                        <Monitor size={10} />
+                        Standard
+                      </button>
+                      <button className="flex items-center gap-1.5 px-3 py-1.5 text-white/30 hover:text-white/60 rounded text-[8px] font-black uppercase transition-colors">
+                        <Smartphone size={10} />
+                        Vertical
+                      </button>
                    </div>
                 </div>
               </div>

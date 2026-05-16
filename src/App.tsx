@@ -34,11 +34,11 @@ export default function App() {
 
         <footer className="h-12 border-t border-white/5 bg-black/60 flex items-center justify-between px-8 text-[9px] uppercase tracking-[0.3em] font-mono text-white/20 mt-auto backdrop-blur-md">
           <div className="flex gap-8">
-            <span>Session: ACTIVE</span>
-            <span>Region: Global-Alpha</span>
+            <span>Secure Storage</span>
+            <span>Cloud Sync</span>
           </div>
           <div className="flex gap-6 items-center">
-            <span className="text-brand-cyan">System Synchronized</span>
+            <span className="text-brand-cyan">All Systems Online</span>
             <div className="w-2.5 h-2.5 bg-brand-cyan animate-pulse rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
           </div>
         </footer>

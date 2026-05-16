@@ -31,8 +31,8 @@ export function Dashboard() {
     <div className="py-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-black uppercase tracking-tighter italic">The Vault</h1>
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-1">Persistent Project Storage</p>
+          <h1 className="text-4xl font-black uppercase tracking-tighter italic">My Projects</h1>
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40 mt-1">Manage your video edits</p>
         </div>
         
         <Link 
@@ -40,7 +40,7 @@ export function Dashboard() {
           className="btn-primary flex items-center justify-center gap-2 self-start md:self-auto px-10"
         >
           <Plus size={14} strokeWidth={3} />
-          <span>New Sync</span>
+          <span>New Project</span>
         </Link>
       </div>
 
@@ -49,7 +49,7 @@ export function Dashboard() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={16} />
           <input 
             type="text" 
-            placeholder="SEARCH REGISTRY..."
+            placeholder="Search projects..."
             className="w-full bg-transparent p-2 pl-10 text-[10px] font-bold tracking-widest uppercase outline-none"
           />
         </div>
@@ -81,9 +81,9 @@ export function Dashboard() {
           <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6 text-white/20">
             <Video size={24} />
           </div>
-          <h2 className="text-[11px] uppercase tracking-[0.2em] font-bold mb-2">Vault is Empty</h2>
-          <p className="text-[10px] text-white/40 mb-8 uppercase tracking-widest">No active sync protocols detected.</p>
-          <Link to="/new" className="btn-secondary">Initialize Sync</Link>
+          <h2 className="text-[11px] uppercase tracking-[0.2em] font-bold mb-2">No projects yet</h2>
+          <p className="text-[10px] text-white/40 mb-8 uppercase tracking-widest">Start your first AI video project.</p>
+          <Link to="/new" className="btn-secondary">New Project</Link>
         </div>
       ) : (
         <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "flex flex-col gap-4"}>

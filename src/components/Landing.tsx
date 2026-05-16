@@ -27,7 +27,7 @@ export function Landing() {
         className="inline-flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2 rounded-full mb-10 backdrop-blur-xl"
       >
         <div className="w-2 h-2 bg-brand-cyan rounded-full animate-ping" />
-        <span className="text-[10px] font-black tracking-[0.3em] uppercase text-brand-cyan">Engine V3.0 Online</span>
+        <span className="text-[10px] font-black tracking-[0.3em] uppercase text-brand-cyan">AI Video Editor</span>
       </motion.div>
 
       <motion.h1
@@ -37,7 +37,7 @@ export function Landing() {
         className="text-7xl md:text-[10rem] font-black uppercase tracking-tighter leading-[0.8] mb-10 max-w-6xl"
       >
         CRAFT.<br />
-        <span className="bg-gradient-to-r from-brand-cyan via-white to-brand-fuchsia bg-clip-text text-transparent italic">NEURAL</span> SYNC.
+        <span className="bg-gradient-to-r from-brand-cyan via-white to-brand-fuchsia bg-clip-text text-transparent italic">SMART</span> SYNC.
       </motion.h1>
 
       <motion.p
@@ -46,8 +46,8 @@ export function Landing() {
         transition={{ delay: 0.2 }}
         className="text-xs md:text-sm text-white/40 max-w-xl mb-16 uppercase tracking-[0.4em] font-bold leading-loose"
       >
-        Architect cinematic reality with OmniSync Neural Engine. 
-        Automate perfect visual rhythm and harmonic alignment.
+        Create professional videos with AI. 
+        Automatically sync audio, visual styles, and transitions.
       </motion.p>
 
       <motion.div
@@ -67,8 +67,8 @@ export function Landing() {
             <Upload size={36} />
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-lg font-black uppercase tracking-[0.2em] text-white">INITIALIZE PROTOCOL</span>
-            <span className="text-[10px] uppercase tracking-widest text-white/30 font-mono">Upload source assets to begin neural editing</span>
+            <span className="text-lg font-black uppercase tracking-[0.2em] text-white">ADD YOUR VIDEO</span>
+            <span className="text-[10px] uppercase tracking-widest text-white/30 font-mono">Upload your files to start editing with AI</span>
           </div>
         </Link>
 
@@ -78,8 +78,8 @@ export function Landing() {
               <Mic2 size={24} />
             </div>
             <div className="text-left">
-              <p className="text-xs font-black uppercase tracking-widest mb-1">Acoustic Sync</p>
-              <p className="text-[10px] text-white/30 uppercase tracking-widest font-medium">98% Harmonic Alignment</p>
+              <p className="text-xs font-black uppercase tracking-widest mb-1">Audio Sync</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-widest font-medium">Professional Sound Mixing</p>
             </div>
           </div>
           <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] flex items-center gap-6 group hover:bg-white/10 transition-colors">
@@ -87,8 +87,8 @@ export function Landing() {
               <Sparkles size={24} />
             </div>
             <div className="text-left">
-              <p className="text-xs font-black uppercase tracking-widest mb-1">Anime Filter</p>
-              <p className="text-[10px] text-white/30 uppercase tracking-widest font-medium">Neural Style Transfer</p>
+              <p className="text-xs font-black uppercase tracking-widest mb-1">AI Styles</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-widest font-medium">Transform video look and feel</p>
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function Landing() {
       <div className="w-full max-w-6xl mb-24">
         <div className="flex items-center gap-4 mb-8">
           <div className="h-px flex-1 bg-white/10" />
-          <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-white/40">Prompt Matrix</h2>
+          <h2 className="text-[10px] uppercase tracking-[0.5em] font-black text-white/40">Example Ideas</h2>
           <div className="h-px flex-1 bg-white/10" />
         </div>
         
@@ -128,18 +128,18 @@ export function Landing() {
         {[
           {
             icon: Database,
-            title: "The Vault",
-            desc: "Persistent metadata storage across every project session."
+            title: "Storage",
+            desc: "Keep your project files organized and accessible anywhere."
           },
           {
             icon: Mic2,
-            title: "Acoustics",
-            desc: "Neural voice matching with 98% harmonic alignment."
+            title: "Audio",
+            desc: "Advanced audio tools for perfect voiceovers and background music."
           },
           {
             icon: Wand2,
-            title: "Prompt Lab",
-            desc: "Natural language directives translated into cinematic reality."
+            title: "AI Tools",
+            desc: "Simple text commands to perform complex video edits automatically."
           }
         ].map((feature, idx) => (
           <motion.div
