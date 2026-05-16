@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Helpers
+    function isSignedIn() { return true; } // Login removed
+    function isOwner(userId) { return userId == 'guest-session' || (request.auth != null && request.auth.uid == userId); }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // User Profile Rules
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == userId &&
+               data.email is string && data.email.size() <= 256 &&
+               data.displayName is string && data.displayName.size() <= 128 &&
+               data.createdAt is number;
+      }
+      
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().createdAt == request.time.toMillis();
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL']);
+    }
+
+    // Video Project Rules
+    match /projects/{projectId} {
+      function isValidProject(data) {
+        return isValidId(data.id) &&
+               data.title is string && data.title.size() <= 256 &&
+               data.status in ['draft', 'processing', 'completed', 'failed'] &&
+               data.aspectRatio in ['9:16', '16:9', '1:1'] &&
+               data.createdAt is number && data.updatedAt is number;
+      }
+
+      allow list: if true;
+      allow get: if true;
+      
+      allow create: if isValidProject(incoming()) && 
+                    incoming().id == projectId &&
+                    incoming().createdAt == request.time.toMillis();
+                    
+      allow update: if isValidProject(incoming()) &&
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().updatedAt == request.time.toMillis();
+                    
+      allow delete: if isSignedIn() && isOwner(existing().ownerId);
+
+      // Subcollection for Assets
+      match /assets/{assetId} {
+        function isValidAsset(data) {
+          return isValidId(data.id) &&
+                 data.projectId == projectId &&
+                 data.type in ['video', 'audio', 'image'] &&
+                 data.url is string && data.url.size() <= 2048 &&
+                 data.createdAt is number;
+        }
+
+        // Must be member of parent project to see/modify assets
+        function canAccessProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+        }
+
+        allow list, get: if isSignedIn() && canAccessProject();
+        allow create: if isSignedIn() && canAccessProject() && isValidAsset(incoming()) &&
+                      incoming().id == assetId &&
+                      incoming().createdAt == request.time.toMillis();
+        allow delete: if isSignedIn() && canAccessProject();
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "VidiGen AI: Intelligent Video Studio",
+  "description": "An AI-powered video editing platform with automated prompt-based editing, voice matching, and project storage for content creators.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI-driven video metadata generation",
+    "Cloud project storage",
+    "Creative prompt-to-edit workflows"
+  ]
+}

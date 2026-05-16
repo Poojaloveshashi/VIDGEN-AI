@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["uid", "email", "displayName", "createdAt"]
+    },
+    "VideoProject": {
+      "title": "Video Project",
+      "description": "A video editing project created by a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "originalPrompt": { "type": "string" },
+        "status": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "aspectRatio": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "duration": { "type": "number" },
+            "fileSize": { "type": "number" },
+            "format": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "ownerId", "title", "originalPrompt", "status", "createdAt", "updatedAt"]
+    },
+    "ProjectAsset": {
+      "title": "Project Asset",
+      "description": "A file asset associated with a video project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "type": { "type": "string" },
+        "url": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "projectId", "type", "url", "name", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "projects/{projectId}": {
+      "schema": "VideoProject",
+      "description": "Video projects"
+    },
+    "projects/{projectId}/assets/{assetId}": {
+      "schema": "ProjectAsset",
+      "description": "Assets for a project"
+    }
+  }
+}
