@@ -32,7 +32,11 @@ import {
   Layout,
   MousePointer2,
   Sticker,
-  Plus
+  Plus,
+  Search,
+  AlertCircle,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { createProject, updateProject, createAsset, getProjectAssets } from '../services/projects';
 import { analyzeEditingPrompt } from '../services/gemini';
@@ -47,6 +51,7 @@ export function Editor() {
   const [prompt, setPrompt] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const suggestions = [
     { text: 'Add professional captions', icon: Type },
@@ -65,10 +70,31 @@ export function Editor() {
   const [projectId, setProjectId] = useState<string | null>(id || null);
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [videoError, setVideoError] = useState(false);
+
+  const changeActiveVideo = (url: string | null) => {
+    setVideoError(false);
+    setActiveVideoUrl(url);
+    setMediaUrl(url);
+  };
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [activeTab, setActiveTab] = useState<'ai' | 'audio' | 'visuals' | 'analysis'>('ai');
-  const [leftNavTab, setLeftNavTab] = useState<'templates' | 'elements' | 'text' | 'upload' | 'tools'>('templates');
+  const [activeTab, setActiveTab] = useState<string>('Tools');
+  const [propertyTab, setPropertyTab] = useState<'ai' | 'audio' | 'visuals' | 'analysis'>('ai');
+
+  useEffect(() => {
+    if (mediaUrl !== activeVideoUrl) {
+      setActiveVideoUrl(mediaUrl);
+    }
+  }, [mediaUrl]);
+
+  useEffect(() => {
+    if (activeVideoUrl !== mediaUrl) {
+      setMediaUrl(activeVideoUrl);
+    }
+  }, [activeVideoUrl]);
+
   const [volumes, setVolumes] = useState({
     master: 80,
     voiceover: 100,
@@ -76,28 +102,155 @@ export function Editor() {
     effects: 70
   });
 
+  const isTemplatesTab = activeTab?.toLowerCase() === 'templates';
+  const isElementsTab = activeTab?.toLowerCase() === 'elements';
+  const isTextTab = activeTab?.toLowerCase() === 'text';
+  const isUploadTab = activeTab?.toLowerCase() === 'uploads' || activeTab?.toLowerCase() === 'upload';
+  const isToolsTab = activeTab?.toLowerCase() === 'tools';
+
+  // Templates Panel state and mockup data
+  const mockTemplates = [
+    {
+      id: 't-gaming',
+      title: 'Gaming Reel',
+      duration: '00:15',
+      thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=400',
+      category: 'Gaming',
+      style: 'Neon',
+      prompt: 'Make a high-octane neon cyber-gaming highlight edit.',
+      color: 'from-brand-cyan/25 to-black/90'
+    },
+    {
+      id: 't-vlog',
+      title: 'Modern Vlog',
+      duration: '00:30',
+      thumbnail: 'https://images.unsplash.com/photo-1533750516457-a7f992034fec?auto=format&fit=crop&q=80&w=400',
+      category: 'Vlog',
+      style: 'Modern',
+      prompt: 'Apply slow cinematic vlog grading, soft transitions and clear voice enhancement.',
+      color: 'from-brand-fuchsia/25 to-black/90'
+    },
+    {
+      id: 't-anime',
+      title: 'Anime Intro',
+      duration: '00:12',
+      thumbnail: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=400',
+      category: 'Intro',
+      style: 'Classic',
+      prompt: 'Fast flashing speed ramps, intense manga-style framing, and saturated colors.',
+      color: 'from-purple-500/25 to-black/90'
+    },
+    {
+      id: 't-cyberpunk',
+      title: 'Cyberpunk Edt',
+      duration: '00:24',
+      thumbnail: 'https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?auto=format&fit=crop&q=80&w=400',
+      category: 'Cinematic',
+      style: 'Neon',
+      prompt: 'Drench in deep indigo and neon pink color temperature, with added signal glitch aesthetics.',
+      color: 'from-blue-500/25 to-black/90'
+    },
+    {
+      id: 't-minimalist',
+      title: 'Minimalist Shot',
+      duration: '00:10',
+      thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=400',
+      category: 'Vlog',
+      style: 'Soft',
+      prompt: 'Add elegant text cards, monochrome filter, and subtle scale-in animations.',
+      color: 'from-gray-500/25 to-black/90'
+    },
+    {
+      id: 't-cinematic',
+      title: 'Cinematic Dawn',
+      duration: '00:45',
+      thumbnail: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=400',
+      category: 'Cinematic',
+      style: 'Classic',
+      prompt: 'Add anamorphic black bars, deep warm sunset grade, and immersive spatial audio curves.',
+      color: 'from-orange-500/25 to-black/90'
+    }
+  ];
+
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templateCategory, setTemplateCategory] = useState('All');
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
+  const [isTemplatesError, setIsTemplatesError] = useState(false);
+
+  const simulateLoading = () => {
+    setIsTemplatesLoading(true);
+    setIsTemplatesError(false);
+    setTimeout(() => {
+      setIsTemplatesLoading(false);
+    }, 1200);
+  };
+
+  const simulateError = () => {
+    setIsTemplatesLoading(true);
+    setIsTemplatesError(false);
+    setTimeout(() => {
+      setIsTemplatesLoading(false);
+      setIsTemplatesError(true);
+    }, 1000);
+  };
+
+  const handleUseTemplate = async (template: typeof mockTemplates[0]) => {
+    setPrompt(template.prompt);
+    setPropertyTab('visuals');
+    if (!mediaUrl) {
+      setCurrentStatus(`Applying sample: ${template.title}...`);
+      const mockSampleVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
+      changeActiveVideo(mockSampleVideo);
+      
+      let targetProjectId = projectId;
+      if (!targetProjectId) {
+        const proj = await createProject({
+          title: template.title,
+          originalPrompt: template.prompt,
+          status: ProjectStatus.DRAFT
+        });
+        if (proj) {
+          targetProjectId = proj.id;
+          setProjectId(proj.id);
+        }
+      }
+      
+      if (targetProjectId) {
+        const newAsset = await createAsset(targetProjectId, {
+          name: `${template.title.toLowerCase().replace(' ', '_')}_sample.mp4`,
+          type: 'video',
+          url: mockSampleVideo,
+          role: 'source'
+        });
+        if (newAsset) {
+          setAssets(prev => [newAsset, ...prev]);
+        }
+      }
+    }
+    setCurrentStatus('Ready');
+  };
+
   useEffect(() => {
     if (projectId) {
       const fetchAssets = async () => {
         const data = await getProjectAssets(projectId);
         setAssets(data || []);
         const firstVideo = data?.find(a => a.type === 'video');
-        if (firstVideo) setActiveVideoUrl(firstVideo.url);
+        if (firstVideo) changeActiveVideo(firstVideo.url);
       };
       fetchAssets();
     }
   }, [projectId]);
 
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const processFiles = async (filesToProcess: FileList | File[]) => {
+    if (!filesToProcess || filesToProcess.length === 0) return;
 
     let targetProjectId = projectId;
     
     if (!targetProjectId) {
       setCurrentStatus('Creating project...');
       const proj = await createProject({
-        title: files[0].name.split('.')[0],
+        title: filesToProcess[0].name.split('.')[0],
         originalPrompt: 'Media Upload',
         status: ProjectStatus.DRAFT
       });
@@ -110,7 +263,7 @@ export function Editor() {
     if (!targetProjectId) return;
 
     setCurrentStatus('Uploading files...');
-    for (const file of Array.from(files) as File[]) {
+    for (const file of Array.from(filesToProcess) as File[]) {
       const type = file.type.startsWith('video/') ? 'video' : 
                    file.type.startsWith('audio/') ? 'audio' : 'image';
       
@@ -125,10 +278,18 @@ export function Editor() {
 
       if (newAsset) {
         setAssets(prev => [newAsset, ...prev]);
-        if (type === 'video' && !activeVideoUrl) setActiveVideoUrl(mockUrl);
+        if (type === 'video' && !activeVideoUrl) {
+          changeActiveVideo(mockUrl);
+        }
       }
     }
     setCurrentStatus('Ready');
+  };
+
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      await processFiles(e.target.files);
+    }
   };
 
   const handleAutomate = async () => {
@@ -159,10 +320,29 @@ export function Editor() {
 
   const togglePlayback = () => {
     if (!videoRef.current) return;
-    if (isPlaying) videoRef.current.pause();
-    else videoRef.current.play();
-    setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error("Playback error", err);
+      });
+    }
   };
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return '00:00:00';
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const pad = (num: number) => String(num).padStart(2, '0');
+    return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+  };
+
+  const videoDuration = videoRef?.current?.duration || 64;
+  const progressRatio = videoDuration > 0 ? (currentTime / videoDuration) : 0;
 
   return (
     <div className="py-2 flex flex-col h-[calc(100vh-100px)]">
@@ -277,17 +457,17 @@ export function Editor() {
         {/* Far Left: Icon Rail */}
         <div className="w-[72px] flex flex-col bg-brand-bg rounded-xl border border-white/5 overflow-hidden">
           {[
-            { id: 'templates', icon: Layout, label: 'Templates' },
-            { id: 'elements', icon: Sticker, label: 'Elements' },
-            { id: 'text', icon: Type, label: 'Text' },
-            { id: 'upload', icon: Upload, label: 'Uploads' },
-            { id: 'tools', icon: Settings2, label: 'Tools' },
+            { id: 'Templates', icon: Layout, label: 'Templates' },
+            { id: 'Elements', icon: Sticker, label: 'Elements' },
+            { id: 'Text', icon: Type, label: 'Text' },
+            { id: 'Uploads', icon: Upload, label: 'Uploads' },
+            { id: 'Tools', icon: Settings2, label: 'Tools' },
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setLeftNavTab(item.id as any)}
+              onClick={() => setActiveTab(item.id)}
               className={`flex flex-col items-center justify-center py-4 px-2 gap-1 border-l-2 transition-all ${
-                leftNavTab === item.id 
+                activeTab === item.id 
                   ? 'border-brand-cyan bg-brand-cyan/5 text-brand-cyan' 
                   : 'border-transparent text-white/30 hover:text-white hover:bg-white/5'
               }`}
@@ -305,8 +485,8 @@ export function Editor() {
           {/* Sub-Sidebar: Contextual Panel */}
           <div className="col-span-2 flex flex-col bg-brand-bg rounded-xl overflow-hidden border border-white/5">
             <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-widest text-white/60">{leftNavTab.charAt(0).toUpperCase() + leftNavTab.slice(1)}</span>
-              {leftNavTab === 'upload' && (
+              <span className="text-[10px] font-black tracking-widest text-white/60">{activeTab}</span>
+              {isUploadTab && (
                 <button onClick={() => fileInputRef.current?.click()} className="p-2 hover:bg-brand-cyan/20 rounded-lg text-brand-cyan border border-brand-cyan/20">
                   <Plus size={14} />
                 </button>
@@ -315,13 +495,13 @@ export function Editor() {
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-              {leftNavTab === 'upload' && (
+              {isUploadTab && (
                 <div className="space-y-3">
-                  {assets.map((asset) => (
+                  {assets?.map((asset) => (
                     <motion.div 
                       key={asset.id}
                       layoutId={asset.id}
-                      onClick={() => asset.type === 'video' && setActiveVideoUrl(asset.url)}
+                      onClick={() => asset.type === 'video' && changeActiveVideo(asset.url)}
                       className={`group relative p-2 rounded-xl border flex flex-col gap-2 cursor-pointer transition-all ${
                         activeVideoUrl === asset.url ? 'bg-brand-cyan/10 border-brand-cyan/40' : 'bg-white/5 border-white/5 hover:bg-white/10'
                       }`}
@@ -334,7 +514,7 @@ export function Editor() {
                       </div>
                     </motion.div>
                   ))}
-                  {assets.length === 0 && (
+                  {(!assets || assets.length === 0) && (
                     <div className="h-full flex flex-col items-center justify-center py-12 px-6 text-center border-2 border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
                       <Upload size={24} className="mb-4 text-white/20" />
                       <p className="text-[8px] uppercase font-black tracking-widest leading-loose text-white/30">Your media library is empty</p>
@@ -343,29 +523,164 @@ export function Editor() {
                 </div>
               )}
 
-              {leftNavTab === 'templates' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: 'Gaming Reel', color: 'bg-brand-cyan/5' },
-                    { label: 'Modern Vlog', color: 'bg-brand-fuchsia/5' },
-                    { label: 'Anime Intro', color: 'bg-white/5' },
-                    { label: 'Cyberpunk Edt', color: 'bg-brand-cyan/5' },
-                    { label: 'Minimalist', color: 'bg-white/5' },
-                    { label: 'Cinematic', color: 'bg-brand-fuchsia/5' }
-                  ].map((t, i) => (
-                    <div key={i} className={`aspect-[9/16] ${t.color} rounded-xl border border-white/10 hover:border-brand-cyan/40 cursor-pointer overflow-hidden relative group transition-all`}>
-                       <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity">
-                          <Layout size={32} />
-                       </div>
-                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-[8px] font-black uppercase tracking-widest">{t.label}</span>
-                       </div>
+              {isTemplatesTab && (
+                <div className="flex flex-col h-full overflow-hidden">
+                  {/* Search and Filters */}
+                  <div className="space-y-2 mb-3">
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        value={templateSearch}
+                        onChange={(e) => setTemplateSearch(e.target.value)}
+                        placeholder="Search templates..."
+                        className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-[9px] font-medium text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-brand-cyan/40 transition-all animate-fade-in"
+                      />
+                      <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
                     </div>
-                  ))}
+                    
+                    {/* Category Carousel */}
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1">
+                      {['All', 'Gaming', 'Vlog', 'Intro', 'Cinematic'].map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setTemplateCategory(cat)}
+                          className={`px-2.5 py-1 rounded-full text-[7px] font-black uppercase tracking-wider transition-all border whitespace-nowrap ${
+                            templateCategory === cat 
+                              ? 'bg-brand-cyan/20 border-brand-cyan text-brand-cyan' 
+                              : 'bg-white/5 border-white/5 text-white/40 hover:text-white/80 hover:bg-white/10'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resilience Tester Subtle Controls */}
+                  <div className="flex items-center gap-1.5 justify-between py-1 px-1.5 border-y border-white/5 bg-white/[0.02] mb-3 rounded">
+                    <span className="text-[7px] uppercase font-black tracking-widest text-white/30">Test states:</span>
+                    <div className="flex gap-1.5">
+                      <button 
+                        onClick={simulateLoading}
+                        className="text-[7px] uppercase font-black tracking-wider text-brand-cyan hover:underline bg-brand-cyan/5 px-1.5 py-0.5 rounded border border-brand-cyan/25"
+                      >
+                        Loading
+                      </button>
+                      <button 
+                        onClick={simulateError}
+                        className="text-[7px] uppercase font-black tracking-wider text-brand-fuchsia hover:underline bg-brand-fuchsia/5 px-1.5 py-0.5 rounded border border-brand-fuchsia/25"
+                      >
+                        Error
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Core Templates List with robust error/loading fallbacks */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-0.5">
+                    {isTemplatesLoading ? (
+                      <div className="py-12 flex flex-col items-center justify-center gap-2 text-center">
+                        <Loader2 className="animate-spin text-brand-cyan" size={18} />
+                        <p className="text-[8px] uppercase tracking-widest font-black text-white/40">Syncing database...</p>
+                      </div>
+                    ) : isTemplatesError ? (
+                      <div className="p-4 rounded-xl border border-brand-fuchsia/20 bg-brand-fuchsia/5 flex flex-col items-center text-center gap-2 shadow-2xl">
+                        <AlertCircle className="text-brand-fuchsia animate-pulse" size={18} />
+                        <p className="text-[9px] font-bold text-white/80 uppercase">Template Offline</p>
+                        <p className="text-[8px] text-white/40 uppercase max-w-[125px] leading-relaxed">Failed to fetch template catalog.</p>
+                        <button
+                          onClick={() => {
+                            setIsTemplatesError(false);
+                            simulateLoading();
+                          }}
+                          className="mt-1 px-3 py-1 bg-brand-fuchsia/20 hover:bg-brand-fuchsia/30 border border-brand-fuchsia/30 text-[8px] font-black uppercase text-white tracking-widest rounded-md transition-all"
+                        >
+                          Retry Cloud Stream
+                        </button>
+                      </div>
+                    ) : (
+                      (() => {
+                        const safeTemplates = mockTemplates || [];
+                        const filtered = safeTemplates?.filter((temp) => {
+                          const matchesSearch = temp?.title?.toLowerCase()?.includes(templateSearch?.toLowerCase() || '') || false;
+                          const matchesCat = templateCategory === 'All' || temp?.category === templateCategory;
+                          return matchesSearch && matchesCat;
+                        }) || [];
+
+                        if (filtered.length === 0) {
+                          return (
+                            <div className="py-12 px-4 text-center border border-dashed border-white/5 rounded-xl bg-white/[0.01]">
+                              <p className="text-[8px] uppercase font-black tracking-widest text-white/30 mb-2">No templates found</p>
+                              <button 
+                                onClick={() => {
+                                  setTemplateSearch('');
+                                  setTemplateCategory('All');
+                                }}
+                                className="text-[7px] uppercase font-black tracking-wider text-brand-cyan underline"
+                              >
+                                Clear Filters
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="grid grid-cols-2 gap-2">
+                            {filtered?.map((temp) => (
+                              <motion.div 
+                                key={temp.id}
+                                layoutId={temp.id}
+                                onClick={() => handleUseTemplate(temp)}
+                                whileHover={{ scale: 1.02 }}
+                                className="aspect-[9/16] rounded-xl border border-white/10 hover:border-brand-cyan/40 bg-[#1a1a1a] cursor-pointer overflow-hidden relative group transition-all"
+                              >
+                                {/* Thumbnail Background */}
+                                <img 
+                                  src={temp.thumbnail} 
+                                  alt={temp.title}
+                                  referrerPolicy="no-referrer"
+                                  className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-40 group-hover:scale-105 transition-all duration-300" 
+                                />
+
+                                {/* Elegant Overlay Color Gradient matching the category */}
+                                <div className={`absolute inset-0 bg-gradient-to-t ${temp.color} opacity-80 group-hover:opacity-90 transition-opacity`} />
+
+                                {/* Play icon overlay on hover */}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 duration-300 pointer-events-none">
+                                  <div className="w-8 h-8 rounded-full bg-brand-cyan text-black flex items-center justify-center shadow-lg transform -translate-y-2 group-hover:translate-y-0 transition-transform">
+                                    <Play size={10} fill="currentColor" className="ml-0.5" />
+                                  </div>
+                                </div>
+
+                                {/* Duration Tag top-right */}
+                                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/75 backdrop-blur-md rounded text-[7px] font-mono font-bold text-white/90">
+                                  {temp.duration}
+                                </div>
+
+                                {/* Style Tag top-left */}
+                                <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-brand-cyan/20 border border-brand-cyan/20 rounded text-[6px] font-bold tracking-wider text-brand-cyan uppercase">
+                                  {temp.style}
+                                </div>
+
+                                {/* Title & Info bottom */}
+                                <div className="absolute inset-x-0 bottom-0 p-2 text-left flex flex-col gap-0.5 pointer-events-none">
+                                  <p className="text-[8px] font-black uppercase text-white tracking-wider truncate leading-none">
+                                    {temp.title}
+                                  </p>
+                                  <p className="text-[6px] font-extrabold uppercase text-brand-cyan/80 tracking-widest leading-none">
+                                    {temp.category}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
                 </div>
               )}
 
-              {leftNavTab === 'elements' && (
+              {isElementsTab && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-2">
                     {[Sparkles, Zap, Mic2, Cpu, Video, Settings2].map((Icon, i) => (
@@ -388,7 +703,7 @@ export function Editor() {
                 </div>
               )}
 
-              {leftNavTab === 'text' && (
+              {isTextTab && (
                  <div className="space-y-4">
                     <button className="w-full py-4 bg-white/10 border border-white/20 rounded-xl hover:scale-[1.02] transition-all flex flex-col items-center gap-2">
                        <span className="text-xl font-black">Add Heading</span>
@@ -414,7 +729,7 @@ export function Editor() {
                  </div>
               )}
 
-              {leftNavTab === 'tools' && (
+              {isToolsTab && (
                 <div className="space-y-4">
                    <div className="p-4 bg-brand-cyan/10 border border-brand-cyan/20 rounded-2xl flex items-center gap-3">
                       <Wand2 size={16} className="text-brand-cyan" />
@@ -438,28 +753,124 @@ export function Editor() {
           {/* Center: Preview & Timeline */}
           <div className="col-span-7 flex flex-col gap-1 overflow-hidden">
             {/* Main Stage */}
-            <div className="flex-1 bg-[#0a0a0a] rounded-xl overflow-hidden relative group border border-white/5 shadow-inner">
-              <div className="absolute top-4 left-4 z-10 flex gap-2">
+            <div 
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  await processFiles(e.dataTransfer.files);
+                }
+              }}
+              onClick={() => {
+                if (!mediaUrl) {
+                  fileInputRef.current?.click();
+                }
+              }}
+              className={`flex-1 overflow-hidden relative group rounded-xl border transition-all duration-300 shadow-inner flex flex-col items-center justify-center cursor-default ${
+                isDragging 
+                  ? 'bg-[#18181b] border-brand-cyan/80 shadow-[0_0_40px_rgba(34,211,238,0.2)] scale-[0.99]' 
+                  : 'bg-[#121212] border-white/5 hover:border-white/10'
+              }`}
+            >
+              <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
                 <div className="px-3 py-1.5 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full text-[8px] font-mono tracking-widest text-brand-cyan flex items-center gap-2 shadow-2xl">
-                  <div className="w-1.5 h-1.5 bg-brand-cyan rounded-full animate-pulse" />
-                  EDITING MODE
+                  <div className={`w-1.5 h-1.5 bg-brand-cyan rounded-full ${mediaUrl ? 'animate-pulse' : ''}`} />
+                  {mediaUrl ? 'PREVIEW MODE' : 'UPLOAD STAGE'}
                 </div>
               </div>
 
               <div className="w-full h-full flex items-center justify-center">
-                {activeVideoUrl ? (
+                {mediaUrl && !videoError ? (
                   <video 
                     ref={videoRef}
-                    src={activeVideoUrl} 
-                    className="w-full h-full object-contain"
+                    src={mediaUrl} 
+                    controls
+                    className="w-full h-full object-contain pointer-events-auto"
                     onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onError={() => {
+                      setVideoError(true);
+                    }}
                   />
-                ) : (
-                  <div className="flex flex-col items-center gap-6 opacity-20 group-hover:opacity-30 transition-opacity">
-                     <div className="w-20 h-20 rounded-[2.5rem] border-2 border-dashed border-white/40 flex items-center justify-center">
-                        <Monitor size={40} />
+                ) : mediaUrl && videoError ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm pointer-events-auto select-none bg-[#0a0a0a]/90 border border-brand-fuchsia/20 shadow-2xl rounded-2xl mx-4">
+                     <div className="w-16 h-16 rounded-full bg-brand-fuchsia/10 text-brand-fuchsia flex items-center justify-center mb-4 border border-brand-fuchsia/20">
+                        <AlertCircle size={28} className="animate-pulse" />
                      </div>
-                     <p className="text-[10px] uppercase font-black tracking-[0.4em]">Ready to design</p>
+                     <h3 className="text-[11px] font-black uppercase tracking-wider mb-2 text-brand-fuchsia">
+                       Media Core Offline
+                     </h3>
+                     <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest max-w-[280px] leading-relaxed mb-6">
+                       Persistence reference expired. The local browser file object stream is no longer valid.
+                     </p>
+                     
+                     <div className="flex flex-col gap-2 w-full">
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           fileInputRef.current?.click();
+                         }}
+                         className="px-5 py-2.5 bg-brand-cyan/25 border border-brand-cyan/40 hover:border-brand-cyan text-brand-cyan hover:bg-brand-cyan/35 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer pointer-events-auto"
+                       >
+                         <Upload size={12} />
+                         Relink File
+                       </button>
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           changeActiveVideo('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+                         }}
+                         className="px-5 py-2.5 bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer pointer-events-auto"
+                       >
+                         <RefreshCw size={12} />
+                         Load Demo Stream
+                       </button>
+                     </div>
+                     
+                     <button
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         changeActiveVideo(null);
+                       }}
+                       className="mt-4 text-[8px] text-white/30 hover:text-white/60 uppercase font-black tracking-widest hover:underline transition-colors cursor-pointer pointer-events-auto"
+                     >
+                       Return to Upload Stage
+                     </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm pointer-events-none select-none">
+                     <motion.div 
+                       animate={{ 
+                         scale: isDragging ? 1.1 : 1,
+                         rotate: isDragging ? 5 : 0 
+                       }}
+                       className={`w-20 h-20 rounded-[2rem] border-2 border-dashed flex items-center justify-center mb-6 transition-all duration-300 pointer-events-none ${
+                         isDragging 
+                           ? 'border-brand-cyan bg-brand-cyan/10 text-brand-cyan shadow-[0_0_20px_rgba(34,211,238,0.3)]' 
+                           : 'border-[#444444] text-white/40 group-hover:border-white/40 group-hover:text-white'
+                       }`}
+                     >
+                       <Upload size={32} className={`${isDragging ? 'animate-bounce' : 'opacity-60'}`} />
+                     </motion.div>
+                     
+                     <h3 className={`text-xs font-black uppercase tracking-wider mb-2 transition-colors duration-300 ${
+                       isDragging ? 'text-brand-cyan' : 'text-white/80'
+                     }`}>
+                       Drag and drop or click to upload
+                     </h3>
+                     
+                     <p className="text-[9px] text-white/30 font-medium uppercase tracking-widest max-w-[280px] leading-relaxed">
+                       Supports MP4, MOV, WEBM up to 500MB
+                     </p>
                   </div>
                 )}
               </div>
@@ -468,14 +879,14 @@ export function Editor() {
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                 <button className="text-white/40 hover:text-white transition-colors scale-90"><Scissors size={18} /></button>
                 <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-mono text-white/30">00:00:24</span>
+                  <span className="text-[10px] font-mono text-white/30">{formatTime(currentTime)}</span>
                   <button 
                     onClick={togglePlayback}
                     className="w-12 h-12 bg-brand-cyan text-black rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-2xl"
                   >
                     {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
                   </button>
-                  <span className="text-[10px] font-mono text-white/30">00:01:04</span>
+                  <span className="text-[10px] font-mono text-white/30">{formatTime(videoDuration)}</span>
                 </div>
                 <button className="text-white/40 hover:text-white transition-colors scale-90"><Volume2 size={18} /></button>
               </div>
@@ -486,9 +897,9 @@ export function Editor() {
               <div className="flex items-center justify-between mb-3 px-2">
                 <div className="flex items-center gap-6">
                   <div className="text-[10px] font-black tracking-tight flex items-center gap-2">
-                    <span className="text-brand-cyan">00:00:12:04</span>
+                    <span className="text-brand-cyan">{formatTime(currentTime)}</span>
                     <span className="text-white/20">/</span>
-                    <span className="text-white/40">00:00:05:00</span>
+                    <span className="text-white/40">{formatTime(videoDuration)}</span>
                   </div>
                   <div className="h-4 w-px bg-white/10" />
                   <div className="flex gap-4">
@@ -521,7 +932,10 @@ export function Editor() {
                 </div>
                 
                 {/* Playhead */}
-                <div className="absolute left-[120px] top-0 bottom-0 w-0.5 bg-brand-fuchsia z-20 shadow-[0_0_10px_rgba(217,70,239,0.5)]">
+                <div 
+                  className="absolute top-0 bottom-0 w-0.5 bg-brand-fuchsia z-20 shadow-[0_0_10px_rgba(217,70,239,0.5)] transition-all duration-100 ease-linear"
+                  style={{ left: `calc(10px + ${progressRatio * 90}%)` }}
+                >
                    <div className="w-3 h-3 bg-brand-fuchsia rounded-full -ml-[5.5px] mt-0 shadow-lg" />
                 </div>
 
@@ -530,7 +944,7 @@ export function Editor() {
                   {/* Video Track */}
                   <div className="h-12 bg-brand-cyan/5 border border-brand-cyan/10 rounded-lg flex items-center gap-0.5 overflow-hidden">
                      <span className="sticky left-0 bg-brand-cyan/20 text-brand-cyan text-[7px] font-black p-2 rounded-r-lg z-10 mr-2 uppercase border-r border-brand-cyan/20">Source</span>
-                     {assets.filter(a => a.type === 'video').map((a, i) => (
+                     {assets?.filter(a => a.type === 'video')?.map((a, i) => (
                        <div key={i} className="h-full w-64 bg-brand-cyan/20 border-r border-brand-white/10 flex flex-col gap-1 px-3 py-1.5 overflow-hidden group">
                           <div className="flex items-center justify-between">
                             <span className="text-[9px] font-black uppercase truncate">{a.name}</span>
@@ -545,7 +959,7 @@ export function Editor() {
                   {/* Audio Track */}
                   <div className="h-10 bg-brand-fuchsia/5 border border-brand-fuchsia/10 rounded-lg flex items-center gap-0.5 overflow-hidden">
                      <span className="sticky left-0 bg-brand-fuchsia/20 text-brand-fuchsia text-[7px] font-black p-2 rounded-r-lg z-10 mr-2 uppercase border-r border-brand-fuchsia/20">Sound</span>
-                     {instructions.filter(inst => inst.action.includes('voice') || inst.action.includes('audio')).map((inst, i) => (
+                     {instructions?.filter(inst => inst.action.includes('voice') || inst.action.includes('audio'))?.map((inst, i) => (
                        <div key={i} className="h-full w-40 bg-brand-fuchsia/10 border-r border-brand-white/10 flex items-center gap-3 px-3">
                           <Volume2 size={10} className="text-brand-fuchsia" />
                           <div className="flex-1 h-3 bg-brand-fuchsia/20 rounded relative">

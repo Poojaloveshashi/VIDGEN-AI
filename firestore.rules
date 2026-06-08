@@ -43,13 +43,14 @@ service cloud.firestore {
       
       allow create: if isValidProject(incoming()) && 
                     incoming().id == projectId &&
-                    incoming().createdAt == request.time.toMillis();
+                    isOwner(incoming().ownerId);
                     
       allow update: if isValidProject(incoming()) &&
-                    incoming().createdAt == existing().createdAt &&
-                    incoming().updatedAt == request.time.toMillis();
+                    isOwner(existing().ownerId) &&
+                    incoming().ownerId == existing().ownerId &&
+                    incoming().createdAt == existing().createdAt;
                     
-      allow delete: if isSignedIn() && isOwner(existing().ownerId);
+      allow delete: if isOwner(existing().ownerId);
 
       // Subcollection for Assets
       match /assets/{assetId} {
@@ -58,19 +59,20 @@ service cloud.firestore {
                  data.projectId == projectId &&
                  data.type in ['video', 'audio', 'image'] &&
                  data.url is string && data.url.size() <= 2048 &&
+                 data.name is string && data.name.size() <= 256 &&
+                 data.role is string && data.role.size() <= 64 &&
                  data.createdAt is number;
         }
 
         // Must be member of parent project to see/modify assets
         function canAccessProject() {
-          return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+          return isOwner(get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId);
         }
 
-        allow list, get: if isSignedIn() && canAccessProject();
-        allow create: if isSignedIn() && canAccessProject() && isValidAsset(incoming()) &&
-                      incoming().id == assetId &&
-                      incoming().createdAt == request.time.toMillis();
-        allow delete: if isSignedIn() && canAccessProject();
+        allow list, get: if canAccessProject();
+        allow create: if canAccessProject() && isValidAsset(incoming()) &&
+                      incoming().id == assetId;
+        allow delete: if canAccessProject();
       }
     }
   }

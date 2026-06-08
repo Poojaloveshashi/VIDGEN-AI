@@ -151,7 +151,7 @@ export const seedSampleProject = async () => {
     await createAsset(project.id, {
       name: 'tokyo_night_drive.mp4',
       type: 'video',
-      url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', // Fallback sample
+      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', // Fallback sample
       role: 'source'
     });
     
